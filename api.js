@@ -380,17 +380,31 @@ app.get("/recipes", function (req, res) { return __awaiter(void 0, void 0, void 
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
-                itemQuery = "SELECT \n        recipes.resultId,\n        recipes.quantities,\n        recipes.ids,\n        recipes.jobId,\n        GROUP_CONCAT(items.name) AS itemName,\n        GROUP_CONCAT(items.img) AS itemImg,\n        GROUP_CONCAT(items.level) AS itemLevel,\n        items.id AS itemId \n    FROM \n        recipes \n    LEFT JOIN \n        items ON items.id = recipes.ids";
+                itemQuery = "SELECT \n  recipes.jobId,\n  recipes.resultId,\n  craftedItem.name AS craftedName,\n  recipes.quantities,\n  recipes.ids,\n  GROUP_CONCAT(items.name) AS itemName,\n  GROUP_CONCAT(items.img) AS itemImg,\n  GROUP_CONCAT(items.level) AS itemLevel,\n  MAX(craftedItem.level) AS recipeLevel\nFROM \n  recipes \n  LEFT JOIN \n  items ON items.id = recipes.ids\nLEFT JOIN\n  items AS craftedItem ON craftedItem.id = recipes.resultId";
                 queryParams = [];
                 if (req.query.jobId) {
                     itemQuery += " WHERE recipes.jobId = ?";
                     queryParams.push(req.query.jobId);
                 }
                 if (req.query.resultId) {
-                    itemQuery += " WHERE recipes.resultId = ? ";
+                    if (itemQuery.includes("WHERE")) {
+                        itemQuery += " AND recipes.resultId = ?";
+                    }
+                    else {
+                        itemQuery += " WHERE recipes.resultId = ?";
+                    }
                     queryParams.push(req.query.resultId);
                 }
-                itemQuery += " GROUP BY \n            recipes.resultId, \n            recipes.quantities, \n            recipes.ids, \n            recipes.jobId \n        ORDER BY\n            recipes.quantities DESC ";
+                if (req.query.lvl) {
+                    if (itemQuery.includes("WHERE")) {
+                        itemQuery += " AND craftedItem.level <= ?";
+                    }
+                    else {
+                        itemQuery += " WHERE craftedItem.level <= ?";
+                    }
+                    queryParams.push(req.query.lvl);
+                }
+                itemQuery += "GROUP BY \n  recipes.resultId, \n  recipes.quantities, \n  recipes.ids, \n  recipes.jobId\n  ORDER BY\n    recipes.quantities DESC;";
                 groupedData = [];
                 recipe = [];
                 previousItemId = 0;
@@ -409,6 +423,8 @@ app.get("/recipes", function (req, res) { return __awaiter(void 0, void 0, void 
                         if (previousItemId != result.resultId) {
                             groupedData.push({
                                 resultItemId: previousItemId,
+                                recipeLevel: result.recipeLevel,
+                                craftedName: result.craftedName,
                                 jobId: result.jobId,
                                 itemLevel: result.itemLevel,
                                 recipe: recipe,
@@ -428,12 +444,16 @@ app.get("/recipes", function (req, res) { return __awaiter(void 0, void 0, void 
                     }
                 });
                 try {
-                    groupedData.push({
-                        resultItemId: previousItemId,
-                        jobId: rows[rows.length - 1].jobId,
-                        itemLevel: rows[rows.length - 1].itemLevel,
-                        recipe: recipe,
-                    });
+                    if (rows.length > 0) {
+                        groupedData.push({
+                            resultItemId: previousItemId,
+                            craftedName: rows[rows.length - 1].craftedName,
+                            jobId: rows[rows.length - 1].jobId,
+                            itemLevel: rows[rows.length - 1].itemLevel,
+                            recipeLevel: rows[rows.length - 1].recipeLevel,
+                            recipe: recipe,
+                        });
+                    }
                 }
                 catch (error) {
                     console.log("trying to access an item without characs: ".concat(error));
@@ -773,6 +793,46 @@ app.get("/quests-categories", function (req, res) { return __awaiter(void 0, voi
             case 3:
                 error_12 = _b.sent();
                 console.error("Error fetching quests: ".concat(error_12));
+                res.status(500).json({ error: "Internal Server Error" });
+                return [3 /*break*/, 4];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); });
+app.get("/quests-steps", function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var itemQuery, queryParams, _a, results, _, error_13;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                itemQuery = "SELECT * from quest_steps";
+                queryParams = [];
+                if (req.query.id) {
+                    itemQuery += " WHERE id = ?";
+                    queryParams.push(req.query.id);
+                }
+                if (req.query.questId) {
+                    itemQuery += " WHERE questId = ?";
+                    queryParams.push(req.query.questId);
+                }
+                if (req.query.stepId) {
+                    itemQuery += " WHERE stepId = ?";
+                    queryParams.push(req.query.stepId);
+                }
+                if (req.query.name) {
+                    itemQuery += " WHERE name LIKE ?";
+                    queryParams.push("%".concat(req.query.name, "%"));
+                }
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, pool.query(itemQuery, queryParams)];
+            case 2:
+                _a = _b.sent(), results = _a[0], _ = _a[1];
+                res.json({ data: results });
+                return [3 /*break*/, 4];
+            case 3:
+                error_13 = _b.sent();
+                console.error("Error fetching quests steps: ".concat(error_13));
                 res.status(500).json({ error: "Internal Server Error" });
                 return [3 /*break*/, 4];
             case 4: return [2 /*return*/];

@@ -512,7 +512,7 @@ async function fetchAchievementsAndInsertIntoDB(pool: mysql.Pool) {
   }
 }
 async function fetchItemsAndInsertIntoDB(pool: mysql.Pool) {
-  let skip = 18750;
+  let skip = 0;
   let insertItemParams;
   let effect = {};
   let query = `CREATE TABLE IF NOT EXISTS items (
@@ -744,7 +744,7 @@ async function fetchRecipesAndInsertIntoDB(pool: mysql.Pool) {
 
   try {
     while (true) {
-      await delay(750);
+      await delay(350);
       const responseRecipes = await axios.get(
         `https://api.beta.dofusdb.fr/recipes?$limit=50&$skip=${skip}`
       );
@@ -1047,7 +1047,7 @@ async function main() {
     //DONE await fetchQuestObjectivesAndInsertIntoDB(pool);
 
     //DONE await fetchAchievementsObjectivesAndInsertIntoDB(pool);
-    await fetchAchievementsCategoriesAndInsertIntoDB(pool);
+    // await fetchAchievementsCategoriesAndInsertIntoDB(pool);
     //DONE await fetchAchievementsRewardsAndInsertIntoDB(pool);
     //DONE await fetchAchievementsAndInsertIntoDB(pool);
 
@@ -1056,9 +1056,9 @@ async function main() {
     //DONE await fetchJobsAndInsertIntoDB(pool);
 
     //DONE await fetchItemSetsAndInsertIntoDB(pool);
-    await fetchItemsAndInsertIntoDB(pool);
+    // await fetchItemsAndInsertIntoDB(pool);
     //DONE await fetchItemsTypeAndInsertIntoDB(pool);
-    //DONE await fetchRecipesAndInsertIntoDB(pool);
+    await fetchRecipesAndInsertIntoDB(pool);
 
     //DONE await fetchMobsAndInsertIntoDB(pool);
     //DONE await fetchMobsDropAndInsertIntoDB(pool);

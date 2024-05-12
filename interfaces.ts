@@ -68,6 +68,8 @@ interface RecipeResult {
   jobId: number;
   itemName: string;
   itemImg: string;
+  craftedName: string;
+  recipeLevel: number;
   itemLevel: string;
   itemId: number;
 }

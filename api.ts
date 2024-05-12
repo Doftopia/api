@@ -6,7 +6,6 @@ import { ParsedQs } from "qs";
 import {
   Item,
   GroupedItems,
-  GroupedRecipes,
   RecipeResult,
   GroupedNmbItems,
   NmbItems,
@@ -22,6 +21,15 @@ import {
 
 const app = express();
 const port = 3001;
+
+interface GroupedRecipes {
+  resultItemId: number;
+  craftedName: string;
+  recipeLevel: number;
+  jobId: number;
+  itemLevel: string;
+  recipe: Recipe[];
+}
 
 app.use(express.json());
 app.use(
@@ -355,38 +363,53 @@ app.get("/achievements-objectives", async (req: Request, res: Response) => {
 
 app.get("/recipes", async (req: Request, res: Response) => {
   let itemQuery = `SELECT 
-        recipes.resultId,
-        recipes.quantities,
-        recipes.ids,
-        recipes.jobId,
-        GROUP_CONCAT(items.name) AS itemName,
-        GROUP_CONCAT(items.img) AS itemImg,
-        GROUP_CONCAT(items.level) AS itemLevel,
-        items.id AS itemId 
-    FROM 
-        recipes 
-    LEFT JOIN 
-        items ON items.id = recipes.ids`;
+  recipes.jobId,
+  recipes.resultId,
+  craftedItem.name AS craftedName,
+  recipes.quantities,
+  recipes.ids,
+  GROUP_CONCAT(items.name) AS itemName,
+  GROUP_CONCAT(items.img) AS itemImg,
+  GROUP_CONCAT(items.level) AS itemLevel,
+  MAX(craftedItem.level) AS recipeLevel
+FROM 
+  recipes 
+  LEFT JOIN 
+  items ON items.id = recipes.ids
+LEFT JOIN
+  items AS craftedItem ON craftedItem.id = recipes.resultId`;
 
   const queryParams = [];
-
   if (req.query.jobId) {
     itemQuery += ` WHERE recipes.jobId = ?`;
     queryParams.push(req.query.jobId);
   }
 
   if (req.query.resultId) {
-    itemQuery += ` WHERE recipes.resultId = ? `;
+    if (itemQuery.includes("WHERE")) {
+      itemQuery += ` AND recipes.resultId = ?`;
+    } else {
+      itemQuery += ` WHERE recipes.resultId = ?`;
+    }
     queryParams.push(req.query.resultId);
   }
 
-  itemQuery += ` GROUP BY 
-            recipes.resultId, 
-            recipes.quantities, 
-            recipes.ids, 
-            recipes.jobId 
-        ORDER BY
-            recipes.quantities DESC `;
+  if (req.query.lvl) {
+    if (itemQuery.includes("WHERE")) {
+      itemQuery += ` AND craftedItem.level <= ?`;
+    } else {
+      itemQuery += ` WHERE craftedItem.level <= ?`;
+    }
+    queryParams.push(req.query.lvl);
+  }
+
+  itemQuery += `GROUP BY 
+  recipes.resultId, 
+  recipes.quantities, 
+  recipes.ids, 
+  recipes.jobId
+  ORDER BY
+    recipes.quantities DESC;`;
 
   let groupedData: GroupedRecipes[] = [];
   let recipe: Recipe[] = [];
@@ -405,6 +428,8 @@ app.get("/recipes", async (req: Request, res: Response) => {
         if (previousItemId != result.resultId) {
           groupedData.push({
             resultItemId: previousItemId,
+            recipeLevel: result.recipeLevel,
+            craftedName: result.craftedName,
             jobId: result.jobId,
             itemLevel: result.itemLevel,
             recipe: recipe,
@@ -424,12 +449,16 @@ app.get("/recipes", async (req: Request, res: Response) => {
     });
 
     try {
-      groupedData.push({
-        resultItemId: previousItemId,
-        jobId: rows[rows.length - 1].jobId,
-        itemLevel: rows[rows.length - 1].itemLevel,
-        recipe: recipe,
-      });
+      if (rows.length > 0) {
+        groupedData.push({
+          resultItemId: previousItemId,
+          craftedName: rows[rows.length - 1].craftedName,
+          jobId: rows[rows.length - 1].jobId,
+          itemLevel: rows[rows.length - 1].itemLevel,
+          recipeLevel: rows[rows.length - 1].recipeLevel,
+          recipe: recipe,
+        });
+      }
     } catch (error) {
       console.log(`trying to access an item without characs: ${error}`);
     }
@@ -750,6 +779,78 @@ app.get("/quests-categories", async (req: Request, res: Response) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+app.get("/quests-steps", async (req: Request, res: Response) => {
+  let itemQuery = `SELECT * from quest_steps`;
+  const queryParams = [];
+
+  if (req.query.id) {
+    itemQuery += ` WHERE id = ?`;
+    queryParams.push(req.query.id);
+  }
+
+  if (req.query.questId) {
+    itemQuery += ` WHERE questId = ?`;
+    queryParams.push(req.query.questId);
+  }
+
+  if (req.query.stepId) {
+    itemQuery += ` WHERE stepId = ?`;
+    queryParams.push(req.query.stepId);
+  }
+
+  if (req.query.name) {
+    itemQuery += ` WHERE name LIKE ?`;
+    queryParams.push(`%${req.query.name}%`);
+  }
+
+  try {
+    const [results, _] = await pool.query(itemQuery, queryParams);
+    res.json({ data: results });
+  } catch (error) {
+    console.error(`Error fetching quests steps: ${error}`);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+app.get("/quests-steps-rewards", async (req: Request, res: Response) => {
+  let itemQuery = `SELECT * from quest_steps_rewards`;
+  const queryParams = [];
+
+  if (req.query.id) {
+    itemQuery += ` WHERE id = ?`;
+    queryParams.push(req.query.id);
+  }
+
+  if (req.query.questId) {
+    itemQuery += ` WHERE questId = ?`;
+    queryParams.push(req.query.questId);
+  }
+
+  if (req.query.stepId) {
+    itemQuery += ` WHERE stepId = ?`;
+    queryParams.push(req.query.stepId);
+  }
+
+  if (req.query.rewardId) {
+    itemQuery += ` WHERE rewardId = ?`;
+    queryParams.push(req.query.rewardId);
+  }
+
+  if (req.query.name) {
+    itemQuery += ` WHERE name LIKE ?`;
+    queryParams.push(`%${req.query.name}%`);
+  }
+
+  try {
+    const [results, _] = await pool.query(itemQuery, queryParams);
+    res.json({ data: results });
+  } catch (error) {
+    console.error(`Error fetching quests steps rewards: ${error}`);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+
+}
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

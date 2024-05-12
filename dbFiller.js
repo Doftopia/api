@@ -519,11 +519,11 @@ function fetchAchievementsCategoriesAndInsertIntoDB(pool) {
             switch (_a.label) {
                 case 0:
                     skip = 0;
-                    query = "CREATE TABLE IF NOT EXISTS achievements_categories (\n        id INT,\n        name VARCHAR(100),\n        parentId INT,\n        img TEXT,\n        color VARCHAR(12),\n        achievementIds JSON\n    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+                    query = "CREATE TABLE IF NOT EXISTS achievements_categories (\n        id INT,\n        name VARCHAR(100),\n        parentId INT,\n        parentName VARCHAR(100),\n        img TEXT,\n        color VARCHAR(12),\n        achievementIds JSON\n    ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                     return [4 /*yield*/, pool.execute(query)];
                 case 1:
                     _a.sent();
-                    insertAchievementCategoryQuery = "INSERT INTO achievements_categories (id, name, parentId, img, color, achievementIds) VALUES (?, ?, ?, ?, ?, ?)";
+                    insertAchievementCategoryQuery = "INSERT INTO achievements_categories (id, name, parentId, parentName, img, color, achievementIds) VALUES (?, ?, ?, ?, ?, ?, ?)";
                     _a.label = 2;
                 case 2:
                     _a.trys.push([2, 12, , 13]);
@@ -720,7 +720,7 @@ function fetchItemsAndInsertIntoDB(pool) {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    skip = 18750;
+                    skip = 0;
                     effect = {};
                     query = "CREATE TABLE IF NOT EXISTS items (\n        name VARCHAR(100),\n        description text,\n        level INT,\n        img VARCHAR(100),\n        imgHighRes VARCHAR(100),\n        id INT,\n        apCost INT,\n        maxRange INT,\n        minRange INT,\n        nmbCast INT,\n        criticalHitProbability INT,\n        weaponDmgFrom INT,\n        weaponDmgTo INT,\n        itemCharacteristics INT,\n        type VARCHAR(50),\n        setName VARCHAR(100),\n        setId INT,\n        effectId INT\n    );";
                     return [4 /*yield*/, pool.execute(query)];
@@ -1004,7 +1004,7 @@ function fetchRecipesAndInsertIntoDB(pool) {
                     _a.label = 3;
                 case 3:
                     if (!true) return [3 /*break*/, 13];
-                    return [4 /*yield*/, delay(750)];
+                    return [4 /*yield*/, delay(350)];
                 case 4:
                     _a.sent();
                     return [4 /*yield*/, axios_1.default.get("https://api.beta.dofusdb.fr/recipes?$limit=50&$skip=".concat(skip))];
@@ -1440,14 +1440,16 @@ function main() {
                     //DONE await fetchQuestObjectiveTypesAndInsertIntoDB(pool);
                     //DONE await fetchQuestObjectivesAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsObjectivesAndInsertIntoDB(pool);
-                    //DONE await fetchAchievementsCategoriesAndInsertIntoDB(pool);
+                    // await fetchAchievementsCategoriesAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsRewardsAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsAndInsertIntoDB(pool);
                     //DONE await fetchCharacteristicsAndInsertIntoDB(pool);
                     //DONE await fetchEffectsAndInsertIntoDB(pool);
                     //DONE await fetchJobsAndInsertIntoDB(pool);
                     //DONE await fetchItemSetsAndInsertIntoDB(pool);
-                    return [4 /*yield*/, fetchItemsAndInsertIntoDB(pool)];
+                    // await fetchItemsAndInsertIntoDB(pool);
+                    //DONE await fetchItemsTypeAndInsertIntoDB(pool);
+                    return [4 /*yield*/, fetchRecipesAndInsertIntoDB(pool)];
                 case 2:
                     //DONE await fetchQuestsAndInsertIntoDB(pool);
                     //DONE await fetchQuestStepsAndInsertIntoDB(pool);
@@ -1456,22 +1458,20 @@ function main() {
                     //DONE await fetchQuestObjectiveTypesAndInsertIntoDB(pool);
                     //DONE await fetchQuestObjectivesAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsObjectivesAndInsertIntoDB(pool);
-                    //DONE await fetchAchievementsCategoriesAndInsertIntoDB(pool);
+                    // await fetchAchievementsCategoriesAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsRewardsAndInsertIntoDB(pool);
                     //DONE await fetchAchievementsAndInsertIntoDB(pool);
                     //DONE await fetchCharacteristicsAndInsertIntoDB(pool);
                     //DONE await fetchEffectsAndInsertIntoDB(pool);
                     //DONE await fetchJobsAndInsertIntoDB(pool);
                     //DONE await fetchItemSetsAndInsertIntoDB(pool);
-                    _a.sent();
+                    // await fetchItemsAndInsertIntoDB(pool);
                     //DONE await fetchItemsTypeAndInsertIntoDB(pool);
-                    //DONE await fetchRecipesAndInsertIntoDB(pool);
+                    _a.sent();
                     //DONE await fetchMobsAndInsertIntoDB(pool);
                     //DONE await fetchMobsDropAndInsertIntoDB(pool);
                     return [4 /*yield*/, pool.end()];
                 case 3:
-                    //DONE await fetchItemsTypeAndInsertIntoDB(pool);
-                    //DONE await fetchRecipesAndInsertIntoDB(pool);
                     //DONE await fetchMobsAndInsertIntoDB(pool);
                     //DONE await fetchMobsDropAndInsertIntoDB(pool);
                     _a.sent();
